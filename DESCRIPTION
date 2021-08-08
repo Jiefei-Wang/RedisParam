@@ -15,7 +15,8 @@ Imports:
     methods,
     redux,
     withr,
-    futile.logger
+    futile.logger,
+    Rcpp
 License: Artistic-2.0
 Encoding: UTF-8
 RoxygenNote: 7.1.1
@@ -25,10 +26,14 @@ Suggests:
     testthat
 LazyData: true
 Collate: 
+    'RcppExports.R'
     'RedisBackend-class.R'
     'RedisParam-class.R'
     'RedisParam-accessors.R'
     'RedisParam-logger.R'
     'RedisParam-methods.R'
+    'deamon.R'
     'zzz.R'
 VignetteBuilder: knitr
+LinkingTo: 
+    Rcpp

@@ -43,7 +43,8 @@ RedisBackend <-
         RedisParam = NULL, jobname = "",
         host = rphost(), port = rpport(), password = rppassword(),
         timeout = 2592000L, type = c("manager", "worker"), id = NULL,
-        workerOffset = NULL, RNGseed = FALSE, log = FALSE
+        workerOffset = NULL, RNGseed = FALSE, log = FALSE,
+        daemon = FALSE
     )
 {
     if (!is.null(RedisParam)) {
@@ -54,6 +55,7 @@ RedisBackend <-
         timeout <- bptimeout(RedisParam)
         log <- bplog(RedisParam)
         RNGseed <- !is.null(bpRNGseed(RedisParam))
+        daemon <- rpdaemon(RedisParam)
     }
     type <- match.arg(type)
     if (is.null(id)) {
@@ -87,15 +89,17 @@ RedisBackend <-
             id = id,
             workerOffset = workerOffset,
             RNGseed = RNGseed,
-            log = log
+            log = log,
+            daemon = daemon
         ),
         class = "RedisBackend"
     )
     if (type == "worker") {
-        .initializeWorker(x)
+        .initializeWorker(x, host = host, port = port, password = password)
     }else{
         .initializeManager(x)
     }
+
     x
 }
 
@@ -117,36 +121,42 @@ taskEltIdx <- list(
 .managerTaskSetName <-
     function(managerId)
 {
+    if(length(managerId) == 0) return(NULL)
     paste0("RedisParam_manager_task_queue_", managerId)
 }
 
 .managerResultQueueName <-
     function(managerId)
 {
+    if(length(managerId) == 0) return(NULL)
     paste0("RedisParam_manager_result_queue_", managerId)
 }
 
 .publicTaskQueueName <-
     function(jobname)
 {
+    if(length(jobname) == 0) return(NULL)
     paste0("RedisParam_public_task_queue_", jobname)
 }
 
 .workerTaskQueueName <-
 function(workerId)
-    {
+{
+    if(length(workerId) == 0) return(NULL)
     paste0("RedisParam_worker_task_queue_", workerId)
 }
 
 .workerTaskCacheName <-
     function(workerId)
 {
+    if(length(workerId) == 0) return(NULL)
     paste0("RedisParam_worker_task_cache_", workerId)
 }
 
 .clientName <-
     function(jobname, type, id)
 {
+    if(length(jobname) == 0) return(NULL)
     paste0(jobname, "_redis_", type, "_" , id)
 }
 
@@ -157,7 +167,7 @@ isNoScriptError <-
     grepl("NOSCRIPT", e$message, fixed = TRUE)
 }
 
-.wait_until_success <-
+waitUntilSuccess <-
     function(expr, timeout, errorMsg, operationWhileWaiting = NULL)
 {
     frame <- parent.frame()
@@ -189,7 +199,7 @@ isNoScriptError <-
 }
 
 ## Check .send_to is called inside bploop
-.isbploop <- function(calls){
+isbploop <- function(calls){
     if (length(calls)<=2) {
         FALSE
     } else {
@@ -240,9 +250,17 @@ isNoScriptError <-
 }
 
 .initializeWorker <-
-    function(x)
+    function(x, host, port, password)
 {
     workerTaskCache <- .workerTaskCacheName(x$id)
+    if(x$daemon)
+        loadDaemon(
+            jobname = x$jobname,
+            workerId = x$id,
+            host = host,
+            port = port,
+            password = password
+        )
     x$api_client$DEL(workerTaskCache)
 }
 
@@ -287,6 +305,9 @@ isNoScriptError <-
         redis$DEL(workerTaskCache),
         redis$DEL(workerTaskQueue)
     )
+    if(x$daemon){
+        unloadDaemon()
+    }
     NULL
 }
 
@@ -373,7 +394,7 @@ isNoScriptError <-
     existsTask <- FALSE
     while(!existsTask){
         workerTaskCache <- .workerTaskCacheName(x$id)
-        taskId <- .wait_until_success(
+        taskId <- waitUntilSuccess(
             {
                 queueInfo <- .selectTaskQueue(x)
                 .move(
@@ -429,7 +450,7 @@ isNoScriptError <-
 {
     managerTaskSet <- .managerTaskSetName(x$id)
     managerResultQueue <- .managerResultQueueName(x$id)
-    response <- .wait_until_success(
+    response <- waitUntilSuccess(
         x$api_client$BRPOP(
             key = managerResultQueue,
             timeout = checkInterval
@@ -520,7 +541,7 @@ setMethod(".send_to", "RedisBackend",
             ## We only dispatch the task to the public queue when
             ## 1. .send_to is called by bploop
             ## 2. The RNGseed is disabled
-            if (!backend$RNGseed && .isbploop(sys.calls())) {
+            if (!backend$RNGseed && isbploop(sys.calls())) {
                 .debug(backend, "A task is sent to the public queue")
                 node <- "public"
             } else {

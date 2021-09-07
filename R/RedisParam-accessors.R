@@ -110,3 +110,12 @@ rpisworker <-
 {
     x$is.worker
 }
+
+#' @rdname RedisParam-class
+#'
+#' @export
+rpdaemon <-
+    function(x)
+{
+    x$daemon
+}

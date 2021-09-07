@@ -15,7 +15,8 @@ Imports:
     methods,
     redux,
     withr,
-    futile.logger
+    futile.logger,
+    rdaemon
 License: Artistic-2.0
 Encoding: UTF-8
 RoxygenNote: 7.1.1
@@ -30,5 +31,6 @@ Collate:
     'RedisParam-accessors.R'
     'RedisParam-logger.R'
     'RedisParam-methods.R'
+    'daemon.R'
     'zzz.R'
 VignetteBuilder: knitr

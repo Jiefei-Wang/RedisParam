@@ -3,7 +3,7 @@
     contains = "BiocParallelParam",
     fields = c(
         hostname = "character", port = "integer", password = "character",
-        backend = "RedisBackend", is.worker = "logical"
+        backend = "RedisBackend", is.worker = "logical", daemon = "logical"
     )
 )
 
@@ -11,7 +11,7 @@
     .BiocParallelParam_prototype,
     list(
         hostname = NA_character_, port = NA_integer_, password = NA_character_,
-        backend = .redisNULL(), is.worker = NA
+        backend = .redisNULL(), is.worker = NA, daemon = NA
     )
 )
 
@@ -105,7 +105,7 @@ RedisParam <-
         progressbar = FALSE, RNGseed = NULL,
         redis.hostname = rphost(), redis.port = rpport(),
         redis.password = rppassword(),
-        is.worker = NA
+        is.worker = NA, daemon = FALSE
     )
 {
     if (!is.null(RNGseed))
@@ -130,7 +130,8 @@ RedisParam <-
         hostname = as.character(redis.hostname),
         port = as.integer(redis.port),
         password = as.character(redis.password),
-        is.worker = as.logical(is.worker)
+        is.worker = as.logical(is.worker),
+        daemon = as.logical(daemon)
     )
     x <- do.call(.RedisParam, prototype)
     config.logger(x)

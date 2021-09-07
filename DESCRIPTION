@@ -26,6 +26,7 @@ Suggests:
     testthat
 LazyData: true
 Collate: 
+    'RcppExports.R'
     'RedisBackend-class.R'
     'RedisParam-class.R'
     'RedisParam-accessors.R'
@@ -34,3 +35,5 @@ Collate:
     'daemon.R'
     'zzz.R'
 VignetteBuilder: knitr
+LinkingTo: 
+    Rcpp

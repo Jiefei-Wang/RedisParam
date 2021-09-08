@@ -411,7 +411,7 @@ isbploop <- function(calls){
         response <- x$api_client$pipeline(
             existsTask = redis$EXISTS(taskId),
             value = .pipeGetElt(taskId, taskEltIdx$taskValue),
-            redis$LSET(taskId, 2, x$id)
+            redis$LSET(taskId, taskEltIdx$workerId, x$id)
         )
         existsTask <- as.logical(response$existsTask)
     }

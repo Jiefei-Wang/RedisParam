@@ -21,8 +21,8 @@
 #'
 #' @param workers integer(1) number of redis workers. For `is.worker
 #'     = FALSE`, this parameter is the maximum number of workers
-#'     expected to be available. For `is.worker = NA`, this is the
-#'     number of workers opened by `bpstart()`.
+#'     expected to be available. For `is.worker = NA` or `TRUE`,
+#'     this is the number of workers opened by `bpstart()`.
 #'
 #' @param tasks See `?"BiocParallelParam-class"`.
 #'

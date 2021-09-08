@@ -25,14 +25,20 @@ NULL
         "Listening the Redis server from the host %s, port %d with the password %s",
         rphost(x), rpport(x), rppassword(x)
     )
+
+    ## If more than one worker is required
+    ## start workers in the backgroud
+    nworkers <- x$workers - 1L
+    if (nworkers)
+        .bpstart_redis_worker_in_background(x, nworkers, wait = FALSE)
+    ## Block the current R session
     worker <- RedisBackend(RedisParam = x, type = "worker")
     .bpworker_impl(worker)              # blocking
 }
 
 .bpstart_redis_worker_in_background <-
-    function(x)
+    function(x, nworkers = x$workers, wait = TRUE)
 {
-    nworkers <- x$workers
     .info(x, "starting %d worker(s) in the background", nworkers)
 
     redisIds <- vapply(seq_len(nworkers), function(i) ipcid(), character(1))
@@ -40,7 +46,8 @@ NULL
         REDISPARAM_HOST = rphost(x),
         REDISPARAM_PASSWORD = rppassword(x),
         REDISPARAM_PORT = rpport(x),
-        REDISPARAM_JOBNAME = bpjobname(x)
+        REDISPARAM_JOBNAME = bpjobname(x),
+        REDISPARAM_DAEMON = as.character(rpdaemon(x))
     )
 
     worker_env <- worker_env[!vapply(worker_env, is.null, logical(1))]
@@ -54,6 +61,9 @@ NULL
             system2(rscript, shQuote(script), stdout = FALSE, wait = FALSE)
         )
     }
+
+    if(!wait)
+        return()
 
     .trace(x, "Waiting for the workers")
     ## Wait until all workers are running
